@@ -70,28 +70,56 @@ pub fn main() !void {
         p1 += result;
     }
 
-    var total: i64 = 0;
+    var p2: u64 = 0;
+    var op: u8 = ' ';
+    var st = std.ArrayList(u64).init(allocator);
+    defer st.deinit();
 
-    var c: usize = cols;
-    while (c > 0) : (c -= 1) {
-        const col = c - 1;
+    var prev_had_digit = false;
 
-        const op = arr.items[rows].items[col];
-        const isMul = std.mem.eql(u8, op, "*");
+    for (0..lines.items[0].len) |i| {
+        if (lines.items[rows][i] == '*' or lines.items[rows][i] == '+')
+            op = lines.items[rows][i];
 
-        var result: i64 = if (isMul) 1 else 0;
+        var num: u64 = 0;
+        var curr_had_digit = false;
 
         for (0..rows) |r| {
-            const val = try std.fmt.parseInt(i64, arr.items[r].items[col], 10);
+            const char = lines.items[r][i];
 
-            if (isMul)
-                result *= val
-            else
-                result += val;
+            if (char >= '0' and char <= '9') {
+                curr_had_digit = true;
+                num = num * 10 + @as(u64, char - '0');
+            }
         }
 
-        total += result;
+        if (curr_had_digit) {
+            try st.append(num);
+        }
+
+        if (prev_had_digit and !curr_had_digit) {
+            var res: u64 = if (op == '*') 1 else 0;
+
+            for (st.items) |v| {
+                if (op == '*') res *= v else res += v;
+            }
+
+            p2 += res;
+            st.clearAndFree();
+        }
+
+        prev_had_digit = curr_had_digit;
     }
 
-    std.debug.print("{d}\n{d}", .{ p1, total });
+    if (st.items.len > 0) {
+        var res: u64 = if (op == '*') 1 else 0;
+
+        for (st.items) |v| {
+            if (op == '*') res *= v else res += v;
+        }
+
+        p2 += res;
+    }
+
+    std.debug.print("{d}\n{d}", .{ p1, p2 });
 }
