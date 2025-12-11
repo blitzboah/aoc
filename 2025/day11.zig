@@ -23,6 +23,34 @@ const MemoValue = struct {
     value: usize,
 };
 
+fn findExit(map: *std.StringHashMap([]const u8), allocator: std.mem.Allocator) !usize {
+    var total: usize = 0;
+
+    var pq = std.ArrayList([]const u8).init(allocator);
+    const val = map.getEntry("you");
+
+    var it = std.mem.splitSequence(u8, val.?.value_ptr.*, " ");
+    while (it.next()) |v| {
+        try pq.append(v);
+    }
+
+    while (pq.items.len > 0) {
+        const k = pq.orderedRemove(0);
+        const key = map.getEntry(k);
+
+        var itr = std.mem.splitSequence(u8, key.?.value_ptr.*, " ");
+        while (itr.next()) |v| {
+            if (std.mem.eql(u8, v, "out")) {
+                total += 1;
+                continue;
+            }
+            try pq.append(v);
+        }
+    }
+
+    return total;
+}
+
 fn backTrack(
     map: *std.StringHashMap([]const u8),
     key: []const u8,
@@ -111,8 +139,10 @@ pub fn main() !void {
             }
         }
     }
-
+    var p1: usize = 0;
     var p2: usize = 0;
+
+    p1 += try findExit(&map, allocator);
 
     var visited = std.StringHashMap(bool).init(allocator);
     defer visited.deinit();
@@ -126,5 +156,5 @@ pub fn main() !void {
         p2 += try backTrack(&map, key, &visited, false, false, &memo, allocator);
     }
 
-    std.debug.print("{d}", .{p2});
+    std.debug.print("{d}\n{d}", .{ p1, p2 });
 }
